@@ -6,26 +6,22 @@
   <title>Chill — порядок на вашей кухне</title>
   <meta name="description" content="Контролируй сроки годности, готовь из того, что есть, и экономь до 25% бюджета на продуктах." />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
-  <!-- ══════════════════════════════
-       HEADER
-  ══════════════════════════════ -->
   <header class="site-header">
     <div class="container header-inner">
       <div class="logo">🥗 Chill</div>
       <nav class="nav">
         <a href="#fridge">Холодильник</a>
         <a href="#recipes">Рецепты</a>
-        <a href="#shopping">Список покупок</a>
+        <a href="#shopping">Покупки</a>
+        <a href="#analytics">Аналитика</a>
       </nav>
     </div>
   </header>
 
-  <!-- ══════════════════════════════
-       HERO
-  ══════════════════════════════ -->
   <section class="hero">
     <div class="hero-bg" aria-hidden="true">
       <div class="shape shape-1"></div>
@@ -42,9 +38,6 @@
     </div>
   </section>
 
-  <!-- ══════════════════════════════
-       КАК ЭТО РАБОТАЕТ
-  ══════════════════════════════ -->
   <section class="section" style="text-align:center">
     <div class="container">
       <h2 class="section-title" style="text-align:center">Как это работает</h2>
@@ -53,7 +46,7 @@
           <div class="step-icon">📱</div>
           <div class="step-num">1</div>
           <h3>Добавь продукты</h3>
-          <p>Вручную или отсканируй чек — все продукты окажутся в одном месте</p>
+          <p>Вручную или отсканируй штрихкод — мы найдём название сами</p>
         </div>
         <div class="step-card">
           <div class="step-icon">🔔</div>
@@ -65,15 +58,13 @@
           <div class="step-icon">👨‍🍳</div>
           <div class="step-num">3</div>
           <h3>Готовь из остатков</h3>
-          <p>Умный подбор рецептов из того, что уже есть в холодильнике</p>
+          <p>Умный подбор рецептов учитывает твои предпочтения и диету</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ══════════════════════════════
-       МОЙ ХОЛОДИЛЬНИК
-  ══════════════════════════════ -->
+  <!-- МОЙ ХОЛОДИЛЬНИК -->
   <section class="section section-alt" id="fridge">
     <div class="container">
       <div class="section-header">
@@ -81,7 +72,10 @@
           <h2 class="section-title" style="margin-bottom:.25rem">Мой холодильник</h2>
           <p id="fridge-count" style="color:var(--text-muted);font-size:.9rem"></p>
         </div>
-        <button class="btn btn-primary" onclick="openModal()">+ Добавить продукт</button>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="startBarcodeScanner()">📷 Сканировать</button>
+          <button class="btn btn-primary" onclick="openModal()">+ Добавить</button>
+        </div>
       </div>
 
       <div id="urgent-banner" class="alert alert-warning" style="display:none">
@@ -101,24 +95,28 @@
     </div>
   </section>
 
-  <!-- ══════════════════════════════
-       РЕЦЕПТЫ
-  ══════════════════════════════ -->
+  <!-- РЕЦЕПТЫ -->
   <section class="section" id="recipes">
     <div class="container">
       <h2 class="section-title">Рецепты из остатков</h2>
-      <div style="text-align:center;margin-bottom:2rem">
+
+      <div class="recipes-top">
+        <div class="diet-bar">
+          <button class="diet-btn active" data-diet="all">Все</button>
+          <button class="diet-btn" data-diet="vegetarian">🥦 Вегетарианское</button>
+          <button class="diet-btn" data-diet="quick">⚡ До 30 мин</button>
+          <button class="diet-btn" data-diet="glutenfree">🌾 Без глютена</button>
+        </div>
         <button class="btn btn-primary btn-lg" onclick="findRecipes()">
           👨‍🍳 Что приготовить?
         </button>
       </div>
+
       <div id="recipes-result"></div>
     </div>
   </section>
 
-  <!-- ══════════════════════════════
-       СПИСОК ПОКУПОК
-  ══════════════════════════════ -->
+  <!-- СПИСОК ПОКУПОК -->
   <section class="section section-alt" id="shopping">
     <div class="container">
       <div class="section-header">
@@ -141,13 +139,12 @@
     </div>
   </section>
 
-  <!-- ══════════════════════════════
-       СТАТИСТИКА
-  ══════════════════════════════ -->
-  <section class="section" id="stats">
+  <!-- АНАЛИТИКА -->
+  <section class="section" id="analytics">
     <div class="container">
-      <h2 class="section-title" style="text-align:center">Статистика кухни</h2>
-      <div class="stats-grid">
+      <h2 class="section-title" style="text-align:center">📊 Аналитика кухни</h2>
+
+      <div class="stats-grid" style="margin-bottom:2.5rem">
         <div class="stat-card">
           <div class="stat-icon">💰</div>
           <div class="stat-value" id="stat-saved">0 ₽</div>
@@ -156,20 +153,37 @@
         <div class="stat-card">
           <div class="stat-icon">🗑️</div>
           <div class="stat-value" id="stat-waste">0</div>
-          <div class="stat-label">Продуктов на грани просрочки</div>
+          <div class="stat-label">Выброшено продуктов</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">❤️</div>
           <div class="stat-value" id="stat-fav">—</div>
           <div class="stat-label">Любимая категория</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-icon">🍽️</div>
+          <div class="stat-value" id="stat-eaten">0</div>
+          <div class="stat-label">Съедено продуктов</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-card chart-card-wide">
+          <h3 class="chart-title">Активность по неделям</h3>
+          <div class="chart-wrap"><canvas id="chart-weekly"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">По категориям</h3>
+          <div class="chart-wrap"><canvas id="chart-categories"></canvas></div>
+        </div>
+        <div class="chart-card chart-card-wide">
+          <h3 class="chart-title">Накопленная экономия (₽)</h3>
+          <div class="chart-wrap"><canvas id="chart-savings"></canvas></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ══════════════════════════════
-       FOOTER
-  ══════════════════════════════ -->
   <footer class="site-footer">
     <div class="container footer-inner">
       <div class="footer-logo">🥗 Chill</div>
@@ -181,9 +195,7 @@
     </div>
   </footer>
 
-  <!-- ══════════════════════════════
-       MODAL — Add product
-  ══════════════════════════════ -->
+  <!-- MODAL — Add product -->
   <div id="modal" class="modal-overlay">
     <div class="modal-box">
       <button class="modal-close" onclick="closeModal()">×</button>
@@ -207,14 +219,30 @@
           <label for="add-expiry">Срок годности</label>
           <input id="add-expiry" class="input" type="date" required />
         </div>
+        <div class="form-group">
+          <label for="add-price">Примерная цена (₽, необязательно)</label>
+          <input id="add-price" class="input" type="number" min="0" placeholder="150" />
+        </div>
         <button type="submit" class="btn btn-primary btn-block">Добавить в холодильник</button>
       </form>
     </div>
   </div>
 
-  <!-- ══════════════════════════════
-       TOAST
-  ══════════════════════════════ -->
+  <!-- MODAL — Camera / Barcode -->
+  <div id="camera-modal" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeCameraModal()">×</button>
+      <h3 class="modal-title">📷 Сканировать штрихкод</h3>
+      <div class="camera-wrap">
+        <video id="barcode-video" autoplay playsinline muted></video>
+        <div class="camera-crosshair"></div>
+      </div>
+      <p id="scan-status" class="scan-status">Наведи камеру на штрихкод...</p>
+      <button class="btn btn-outline btn-block" style="margin-top:1rem" onclick="closeCameraModal()">Отмена</button>
+    </div>
+  </div>
+
+  <!-- TOAST -->
   <div id="toast" class="toast">
     <span id="toast-text"></span>
     <button id="toast-close">×</button>
