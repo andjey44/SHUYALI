@@ -7,6 +7,7 @@
   <meta name="description" content="Контролируй сроки годности, готовь из того, что есть, и экономь до 25% бюджета на продуктах." />
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -21,6 +22,22 @@
       </nav>
     </div>
   </header>
+
+  <section class="section auth-section" id="auth">
+    <div class="container auth-card">
+      <div>
+        <h2 class="auth-title">Аккаунт Chill</h2>
+        <p id="auth-status" class="auth-status">Гостевой режим: данные хранятся только в этом браузере.</p>
+      </div>
+      <div id="auth-form" class="auth-form">
+        <input id="auth-email" class="input" type="email" placeholder="Email" autocomplete="email" />
+        <input id="auth-password" class="input" type="password" placeholder="Пароль" autocomplete="current-password" />
+        <button class="btn btn-primary" onclick="signInChill()">Войти</button>
+        <button class="btn btn-outline" onclick="signUpChill()">Регистрация</button>
+      </div>
+      <button id="auth-logout" class="btn btn-outline" style="display:none" onclick="signOutChill()">Выйти</button>
+    </div>
+  </section>
 
   <section class="hero">
     <div class="hero-bg" aria-hidden="true">
@@ -248,6 +265,8 @@
     <button id="toast-close">×</button>
   </div>
 
+  <script src="supabase/supabase.js"></script>
   <script src="script.js"></script>
+  <script src="supabase/app-sync.js"></script>
 </body>
 </html>
