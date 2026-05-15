@@ -13,6 +13,29 @@
 
   const supabaseApi = window.chillSupabase;
 
+  function showAuthError(error, fallbackMessage) {
+    console.error(error);
+
+    const msg = String(error?.message || '').toLowerCase();
+
+    if (msg.includes('password')) {
+      showToast('Пароль должен быть минимум 6 символов');
+      return;
+    }
+
+    if (msg.includes('email')) {
+      showToast('Проверьте правильность email');
+      return;
+    }
+
+    if (msg.includes('already') || msg.includes('registered')) {
+      showToast('Такой email уже зарегистрирован');
+      return;
+    }
+
+    showToast(fallbackMessage);
+  }
+
   async function refreshAuthUI() {
     const session = await supabaseApi.getSession();
 
@@ -48,28 +71,28 @@
   async function syncProductsFromCloud() {
     const cloudProducts = await supabaseApi.getProducts();
 
-    if (Array.isArray(cloudProducts) && cloudProducts.length > 0) {
-      products = cloudProducts.map(p => ({
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        expiryDate: p.expiry_date,
-        price: p.price,
-        addedAt: p.created_at
-      }));
-    }
+    products = Array.isArray(cloudProducts)
+      ? cloudProducts.map(p => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          expiryDate: p.expiry_date,
+          price: p.price,
+          addedAt: p.created_at
+        }))
+      : [];
   }
 
   async function syncShoppingFromCloud() {
     const cloudShopping = await supabaseApi.getShoppingItems();
 
-    if (Array.isArray(cloudShopping) && cloudShopping.length > 0) {
-      shopping = cloudShopping.map(item => ({
-        id: item.id,
-        name: item.name,
-        bought: item.bought
-      }));
-    }
+    shopping = Array.isArray(cloudShopping)
+      ? cloudShopping.map(item => ({
+          id: item.id,
+          name: item.name,
+          bought: item.bought
+        }))
+      : [];
   }
 
   window.signUpChill = async function () {
@@ -81,15 +104,19 @@
       return;
     }
 
-    const { error } = await supabaseApi.signUp(email, password);
+    const { data, error } = await supabaseApi.signUp(email, password);
 
     if (error) {
-      console.error(error);
-      showToast('Ошибка регистрации');
+      showAuthError(error, 'Ошибка регистрации');
       return;
     }
 
-    showToast('Регистрация успешна! Проверьте email.');
+    if (data?.session) {
+      showToast('Регистрация успешна, вы вошли в аккаунт 🚀');
+    } else {
+      showToast('Регистрация успешна! Теперь войдите в аккаунт.');
+    }
+
     await refreshAuthUI();
   };
 
@@ -105,8 +132,7 @@
     const { error } = await supabaseApi.signIn(email, password);
 
     if (error) {
-      console.error(error);
-      showToast('Неверный email или пароль');
+      showAuthError(error, 'Неверный email или пароль');
       return;
     }
 
