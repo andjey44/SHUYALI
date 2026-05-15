@@ -130,9 +130,14 @@
     },
 
     async getProducts() {
+      const user = await this.getUser();
+
+      if (!user) return [];
+
       const { data, error } = await client
         .from('products')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -173,16 +178,28 @@
     },
 
     async deleteProduct(productId) {
+      const user = await this.getUser();
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       return client
         .from('products')
         .delete()
-        .eq('id', productId);
+        .eq('id', productId)
+        .eq('user_id', user.id);
     },
 
     async getShoppingItems() {
+      const user = await this.getUser();
+
+      if (!user) return [];
+
       const { data, error } = await client
         .from('shopping_items')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
