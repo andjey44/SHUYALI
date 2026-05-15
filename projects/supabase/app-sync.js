@@ -18,18 +18,28 @@
 
     const msg = String(error?.message || '').toLowerCase();
 
+    if (msg.includes('email not confirmed') || msg.includes('confirm') || msg.includes('confirmed')) {
+      showToast('Email не подтверждён. Я могу отключить подтверждение или подтвердить аккаунт в Supabase.');
+      return;
+    }
+
+    if (msg.includes('invalid login credentials')) {
+      showToast('Неверный email или пароль');
+      return;
+    }
+
     if (msg.includes('password')) {
       showToast('Пароль должен быть минимум 6 символов');
       return;
     }
 
-    if (msg.includes('email')) {
-      showToast('Проверьте правильность email');
+    if (msg.includes('already') || msg.includes('registered')) {
+      showToast('Такой email уже зарегистрирован');
       return;
     }
 
-    if (msg.includes('already') || msg.includes('registered')) {
-      showToast('Такой email уже зарегистрирован');
+    if (msg.includes('email')) {
+      showToast('Проверьте правильность email');
       return;
     }
 
