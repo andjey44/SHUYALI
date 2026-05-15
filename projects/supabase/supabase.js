@@ -23,10 +23,29 @@
       return session;
     },
 
-    async signUp(email, password) {
+    async getUser() {
+      const {
+        data: { user },
+        error
+      } = await client.auth.getUser();
+
+      if (error) {
+        console.error(error);
+        return null;
+      }
+
+      return user;
+    },
+
+    async signUp(email, password, fullName = '') {
       return client.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
       });
     },
 
@@ -39,6 +58,75 @@
 
     async signOut() {
       return client.auth.signOut();
+    },
+
+    async getProfile() {
+      const user = await this.getUser();
+
+      if (!user) return null;
+
+      const { data, error } = await client
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error(error);
+        return {
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || '',
+          avatar_url: user.user_metadata?.avatar_url || ''
+        };
+      }
+
+      return data;
+    },
+
+    async updateProfile(profile) {
+      const user = await this.getUser();
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { data, error } = await client
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          full_name: profile.full_name || '',
+          avatar_url: profile.avatar_url || ''
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error(error);
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getUserSettings() {
+      const user = await this.getUser();
+
+      if (!user) return null;
+
+      const { data, error } = await client
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error(error);
+        return null;
+      }
+
+      return data;
     },
 
     async getProducts() {
@@ -56,9 +144,7 @@
     },
 
     async addProduct(product) {
-      const {
-        data: { user }
-      } = await client.auth.getUser();
+      const user = await this.getUser();
 
       if (!user) {
         throw new Error('User not authenticated');
@@ -108,9 +194,7 @@
     },
 
     async addShoppingItem(item) {
-      const {
-        data: { user }
-      } = await client.auth.getUser();
+      const user = await this.getUser();
 
       if (!user) {
         throw new Error('User not authenticated');
