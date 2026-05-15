@@ -37,9 +37,30 @@ a:hover { opacity: .8; }
 .site-header { background: rgba(249,249,248,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
 .header-inner { display: flex; align-items: center; justify-content: space-between; padding: .9rem 0; }
 .logo { font-size: 1.4rem; font-weight: 800; color: var(--text); }
-.nav { display: flex; gap: 2rem; }
+.nav { display: flex; gap: 2rem; margin-right: 8.5rem; }
 .nav a { font-weight: 500; color: var(--text-muted); font-size: .95rem; }
 .nav a:hover { color: var(--green); opacity: 1; }
+
+.auth-section { position: fixed; top: 8px; right: 1.5rem; z-index: 250; padding: 0; background: transparent; }
+.auth-card { display: flex; align-items: center; gap: .55rem; width: auto; max-width: none; padding: 0; margin: 0; }
+.auth-card > div:first-child { display: none; }
+.auth-title { display: none; }
+.auth-status { display: none; }
+.auth-form { display: flex; align-items: center; gap: .45rem; }
+.auth-form .input { width: 118px; min-height: 38px; padding: .45rem .7rem; font-size: .82rem; background: rgba(255,255,255,.96); }
+.auth-form .btn, #auth-logout { min-height: 38px; padding: .45rem .8rem; font-size: .82rem; border-radius: 999px; }
+#auth-logout { background: var(--card-bg); }
+.profile-card { position: absolute; top: 48px; right: 0; display: none; align-items: center; gap: .9rem; width: 320px; padding: 1rem; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); text-align: left; }
+.profile-avatar { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--green-light); color: var(--green); font-weight: 800; }
+.profile-content { flex: 1; min-width: 0; }
+.profile-content h3 { font-size: 1rem; line-height: 1.25; margin-bottom: .1rem; }
+.profile-content p { color: var(--text-muted); font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-stats { display: flex; gap: .55rem; margin-top: .75rem; }
+.profile-stat { flex: 1; padding: .55rem; background: var(--bg-alt); border-radius: var(--radius-sm); text-align: center; }
+.profile-stat-value { display: block; font-size: 1rem; font-weight: 800; color: var(--green); }
+.profile-stat-label { display: block; font-size: .72rem; color: var(--text-muted); }
+.profile-actions { margin-top: .75rem; }
+.profile-actions .btn { width: 100%; min-height: 36px; font-size: .8rem; }
 
 .hero { position: relative; overflow: hidden; padding: 6rem 0 5rem; background: linear-gradient(135deg, #e8f5e9 0%, #f9f9f8 55%, #fff3e0 100%); text-align: center; }
 .hero-inner { position: relative; z-index: 2; }
@@ -187,6 +208,15 @@ a:hover { opacity: .8; }
 @keyframes fadeIn { from{opacity:0}to{opacity:1} }
 @keyframes slideUpModal { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
 @keyframes slideUpToast { from{opacity:0;transform:translateY(10px) translateX(-50%)}to{opacity:1;transform:translateY(0) translateX(-50%)} }
+
+@media(max-width:900px){
+  .nav { margin-right: 0; }
+  .auth-section { position: static; padding: .75rem 1rem; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .auth-card { width: 100%; justify-content: center; flex-wrap: wrap; }
+  .auth-form { flex-wrap: wrap; justify-content: center; }
+  .auth-form .input { width: 160px; }
+  .profile-card { position: static; width: 100%; margin-top: .75rem; }
+}
 
 @media(max-width:760px){
   .nav { gap:1rem; }
