@@ -6,6 +6,11 @@
     return;
   }
 
+  // Load profile UI layer dynamically
+  const profileScript = document.createElement('script');
+  profileScript.src = 'supabase/profile-ui.js';
+  document.head.appendChild(profileScript);
+
   const supabaseApi = window.chillSupabase;
 
   async function refreshAuthUI() {
@@ -22,11 +27,21 @@
 
       await syncProductsFromCloud();
       await syncShoppingFromCloud();
+
       render();
+
+      if (window.renderChillProfile) {
+        await window.renderChillProfile();
+      }
     } else {
       authStatus.textContent = 'Гостевой режим: данные хранятся только в этом браузере.';
       authForm.style.display = 'flex';
       logoutBtn.style.display = 'none';
+
+      const profileCard = document.getElementById('profile-card');
+      if (profileCard) {
+        profileCard.style.display = 'none';
+      }
     }
   }
 
@@ -136,6 +151,10 @@
     closeModal();
     render();
 
+    if (window.renderChillProfile) {
+      await window.renderChillProfile();
+    }
+
     showToast(`✓ ${name} сохранён в облаке`);
   };
 
@@ -163,6 +182,10 @@
 
     await syncShoppingFromCloud();
     renderShopping();
+
+    if (window.renderChillProfile) {
+      await window.renderChillProfile();
+    }
 
     showToast('Товар сохранён в Supabase');
   };
