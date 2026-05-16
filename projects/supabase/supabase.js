@@ -129,6 +129,81 @@
       return data;
     },
 
+    async getSubscription() {
+      const user = await this.getUser();
+
+      if (!user) return null;
+
+      let { data, error } = await client
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!data && error) {
+        const rpcResult = await client.rpc('ensure_user_subscription', {
+          target_user_id: user.id
+        });
+
+        if (rpcResult.error) {
+          console.error(rpcResult.error);
+          return null;
+        }
+
+        data = rpcResult.data;
+      }
+
+      return data;
+    },
+
+    async activatePremiumTestMode() {
+      const user = await this.getUser();
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const periodEnd = new Date();
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+      const { data, error } = await client
+        .from('subscriptions')
+        .upsert({
+          user_id: user.id,
+          plan: 'premium',
+          status: 'active',
+          current_period_end: periodEnd.toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error(error);
+        throw error;
+      }
+
+      return data;
+    },
+
+    hasPremiumAccess(subscription) {
+      if (!subscription) return false;
+
+      if (subscription.status === 'active') return true;
+
+      if (subscription.status === 'trialing') {
+        return new Date(subscription.trial_ends_at) > new Date();
+      }
+
+      return false;
+    },
+
+    getTrialDaysLeft(subscription) {
+      if (!subscription || subscription.status !== 'trialing') return 0;
+
+      const diff = new Date(subscription.trial_ends_at) - new Date();
+      return Math.max(0, Math.ceil(diff / 86400000));
+    },
+
     async getProducts() {
       const user = await this.getUser();
 
