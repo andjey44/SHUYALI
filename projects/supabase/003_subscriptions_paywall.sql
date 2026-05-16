@@ -1,6 +1,16 @@
 -- Chill Paywall and subscription MVP
 -- Adds a 7-day trial and test Premium activation support.
 
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 create table if not exists public.subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references auth.users(id) on delete cascade,
@@ -43,7 +53,8 @@ to authenticated
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
-create or replace trigger set_subscriptions_updated_at
+drop trigger if exists set_subscriptions_updated_at on public.subscriptions;
+create trigger set_subscriptions_updated_at
 before update on public.subscriptions
 for each row execute function public.set_updated_at();
 
