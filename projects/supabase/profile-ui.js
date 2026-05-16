@@ -7,6 +7,10 @@
   barcodeScript.src = 'supabase/barcode-scanner.js';
   document.head.appendChild(barcodeScript);
 
+  const recipesScript = document.createElement('script');
+  recipesScript.src = 'supabase/recipes-catalog.js';
+  document.head.appendChild(recipesScript);
+
   const api = window.chillSupabase;
 
   function ensureProfileCard() {
