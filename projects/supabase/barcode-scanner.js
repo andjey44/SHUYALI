@@ -2,6 +2,7 @@
 // Replaces the basic scanner with a more reliable flow:
 // 1) Browser BarcodeDetector + camera when supported.
 // 2) Manual barcode input when camera/scanner is unavailable.
+// 3) If product is found, it is added to the fridge immediately.
 
 (function () {
   let stream = null;
@@ -20,13 +21,13 @@
         <button class="modal-close" id="manual-barcode-close">×</button>
         <h3 class="modal-title">Ввести штрихкод</h3>
         <p style="color:var(--text-muted);margin-bottom:1rem">
-          Камера или авто-сканер недоступны в этом браузере. Введите цифры со штрихкода вручную.
+          Введите цифры под штрихкодом на упаковке. Мы попробуем найти продукт в Open Food Facts и сразу добавить его в холодильник.
         </p>
         <div class="form-group">
-          <label for="manual-barcode-input">Штрихкод</label>
-          <input id="manual-barcode-input" class="input" inputmode="numeric" placeholder="Например: 4601234567890" />
+          <label for="manual-barcode-input">Штрихкод с упаковки</label>
+          <input id="manual-barcode-input" class="input" inputmode="numeric" placeholder="Например: 4607034021511" />
         </div>
-        <button class="btn btn-primary btn-block" id="manual-barcode-submit">Найти продукт</button>
+        <button class="btn btn-primary btn-block" id="manual-barcode-submit">Найти и добавить</button>
         <button class="btn btn-outline btn-block" style="margin-top:.75rem" id="manual-open-product-form">Добавить вручную</button>
       </div>
     `;
@@ -74,6 +75,30 @@
       stream.getTracks().forEach(track => track.stop());
       stream = null;
     }
+  }
+
+  async function addFoundProductToFridge(product) {
+    document.getElementById('add-name').value = product.name;
+    document.getElementById('add-category').value = product.category;
+    document.getElementById('add-expiry').value = product.expiryDate;
+    document.getElementById('add-price').value = product.price || '';
+
+    if (typeof window.addProduct === 'function') {
+      await window.addProduct();
+      return;
+    }
+
+    products.push({
+      id: uid(),
+      name: product.name,
+      category: product.category,
+      expiryDate: product.expiryDate,
+      price: product.price || CATEGORY_PRICE[product.category] || 100,
+      addedAt: new Date().toISOString()
+    });
+
+    save(KEYS.products, products);
+    render();
   }
 
   window.closeCameraModal = function () {
@@ -147,12 +172,14 @@
   const originalFetchProductByBarcode = window.fetchProductByBarcode;
   window.fetchProductByBarcode = async function (barcode) {
     try {
+      showToast('Ищем продукт по штрихкоду...');
+
       const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(barcode)}.json`);
       const data = await res.json();
 
       if (data.status === 1 && data.product) {
         const p = data.product;
-        const name = p.product_name_ru || p.product_name_en || p.product_name || '';
+        const name = p.product_name_ru || p.product_name_en || p.product_name || `Продукт ${barcode}`;
         const tags = (p.categories_tags || []).map(c => c.toLowerCase());
 
         let category = 'other';
@@ -163,12 +190,14 @@
           }
         }
 
-        document.getElementById('add-name').value = name || `Продукт ${barcode}`;
-        document.getElementById('add-category').value = category;
-        document.getElementById('add-expiry').value = addDays(new Date(), CATEGORY_DEFAULT_DAYS[category] || 7);
+        await addFoundProductToFridge({
+          name,
+          category,
+          expiryDate: addDays(new Date(), CATEGORY_DEFAULT_DAYS[category] || 7),
+          price: CATEGORY_PRICE[category] || 100
+        });
 
-        openModal();
-        showToast(name ? `✓ Найден: ${name}` : 'Продукт найден. Проверь название.');
+        showToast(`✓ ${name} добавлен в холодильник`);
         return;
       }
 
