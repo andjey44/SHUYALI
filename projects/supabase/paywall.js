@@ -25,6 +25,7 @@
       }
 
       .paywall-card {
+        position: relative;
         width: min(100%, 460px);
         padding: 2rem;
         border-radius: 22px;
@@ -32,6 +33,30 @@
         border: 1px solid var(--border, #e8ece6);
         box-shadow: 0 18px 60px rgba(0,0,0,.22);
         text-align: center;
+      }
+
+      .paywall-close {
+        position: absolute;
+        top: .85rem;
+        right: .85rem;
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 50%;
+        background: var(--bg-alt, #F2F5F0);
+        color: var(--text-muted, #6b7a67);
+        font-size: 1.25rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all .18s ease;
+      }
+
+      .paywall-close:hover {
+        background: var(--red-light, #ffebee);
+        color: var(--red, #F44336);
       }
 
       .paywall-badge {
@@ -120,6 +145,7 @@
 
     overlay.innerHTML = `
       <div class="paywall-card">
+        <button class="paywall-close" id="paywall-close-btn" type="button" aria-label="Закрыть окно">×</button>
         <div class="paywall-badge">Premium</div>
         <h2>Пробный период закончился</h2>
         <p class="paywall-subtitle">
@@ -153,6 +179,11 @@
 
     document.getElementById('activate-premium-btn').addEventListener('click', async () => {
       await activatePremiumTestMode();
+    });
+
+    document.getElementById('paywall-close-btn').addEventListener('click', () => {
+      hidePaywall();
+      showToast('Окно подписки закрыто. Pro понадобится после окончания trial.');
     });
   }
 
@@ -250,7 +281,8 @@
     refreshPaywall,
     hasAccess: () => premiumAccess,
     getSubscription: () => currentSubscription,
-    showPaywall
+    showPaywall,
+    hidePaywall
   };
 
   document.addEventListener('DOMContentLoaded', () => {
