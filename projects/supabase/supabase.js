@@ -138,6 +138,7 @@
         .from('products')
         .select('*')
         .eq('user_id', user.id)
+        .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -175,6 +176,44 @@
       }
 
       return data;
+    },
+
+    async markProductEaten(product) {
+      const user = await this.getUser();
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error: eventError } = await client
+        .from('product_events')
+        .insert([
+          {
+            user_id: user.id,
+            product_id: product.id,
+            product_name: product.name,
+            category: product.category || 'other',
+            event_type: 'eaten',
+            price: product.price || 0
+          }
+        ]);
+
+      if (eventError) {
+        console.error(eventError);
+      }
+
+      const { error: updateError } = await client
+        .from('products')
+        .update({ status: 'eaten' })
+        .eq('id', product.id)
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error(updateError);
+        throw updateError;
+      }
+
+      return true;
     },
 
     async deleteProduct(productId) {
