@@ -11,7 +11,30 @@
   profileScript.src = 'supabase/profile-ui.js';
   document.head.appendChild(profileScript);
 
+  // Load paywall layer dynamically
+  const paywallScript = document.createElement('script');
+  paywallScript.src = 'supabase/paywall.js';
+  document.head.appendChild(paywallScript);
+
   const supabaseApi = window.chillSupabase;
+
+  async function hasPremiumAccessOrShowPaywall() {
+    const session = await supabaseApi.getSession();
+
+    if (!session?.user) return true;
+
+    if (!window.chillPaywall) return true;
+
+    const result = await window.chillPaywall.refreshPaywall();
+
+    if (!result.hasAccess) {
+      window.chillPaywall.showPaywall();
+      showToast('Пробный период закончился. Активируйте Premium.');
+      return false;
+    }
+
+    return true;
+  }
 
   function showAuthError(error, fallbackMessage) {
     console.error(error);
@@ -66,6 +89,10 @@
       if (window.renderChillProfile) {
         await window.renderChillProfile();
       }
+
+      if (window.chillPaywall) {
+        await window.chillPaywall.refreshPaywall();
+      }
     } else {
       authStatus.textContent = 'Гостевой режим: данные хранятся только в этом браузере.';
       authForm.style.display = 'flex';
@@ -74,6 +101,10 @@
       const profileCard = document.getElementById('profile-card');
       if (profileCard) {
         profileCard.style.display = 'none';
+      }
+
+      if (window.chillPaywall) {
+        await window.chillPaywall.refreshPaywall();
       }
     }
   }
@@ -165,6 +196,8 @@
       return;
     }
 
+    if (!(await hasPremiumAccessOrShowPaywall())) return;
+
     const name = document.getElementById('add-name').value.trim();
     const category = document.getElementById('add-category').value;
     const expiryDate = document.getElementById('add-expiry').value;
@@ -202,6 +235,8 @@
       originalMarkEaten(id);
       return;
     }
+
+    if (!(await hasPremiumAccessOrShowPaywall())) return;
 
     const product = products.find(x => x.id === id);
 
@@ -245,6 +280,8 @@
       originalAddManualShopping();
       return;
     }
+
+    if (!(await hasPremiumAccessOrShowPaywall())) return;
 
     const input = document.getElementById('shopping-input');
     const name = input.value.trim();
