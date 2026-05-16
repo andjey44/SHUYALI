@@ -131,7 +131,7 @@
       ? cloudShopping.map(item => ({
           id: item.id,
           name: item.name,
-          bought: item.bought
+          bought: Boolean(item.bought)
         }))
       : [];
   }
@@ -288,10 +288,16 @@
 
     if (!name) return;
 
+    if (shopping.find(s => s.name.toLowerCase() === name.toLowerCase())) {
+      showToast('Уже есть в списке');
+      return;
+    }
+
     await supabaseApi.addShoppingItem({
       name,
       category: 'other',
-      quantity: '1'
+      quantity: '1',
+      bought: false
     });
 
     input.value = '';
@@ -304,6 +310,78 @@
     }
 
     showToast('Товар сохранён в Supabase');
+  };
+
+  const originalToggleBought = window.toggleBought;
+  window.toggleBought = async function (id) {
+    const session = await supabaseApi.getSession();
+
+    if (!session?.user) {
+      originalToggleBought(id);
+      return;
+    }
+
+    if (!(await hasPremiumAccessOrShowPaywall())) return;
+
+    const item = shopping.find(s => s.id === id);
+    if (!item) return;
+
+    const nextBought = !item.bought;
+
+    await supabaseApi.updateShoppingItemBought(id, nextBought);
+    shopping = shopping.map(s => s.id === id ? { ...s, bought: nextBought } : s);
+    renderShopping();
+  };
+
+  const originalRemoveShoppingItem = window.removeShoppingItem;
+  window.removeShoppingItem = async function (id) {
+    const session = await supabaseApi.getSession();
+
+    if (!session?.user) {
+      originalRemoveShoppingItem(id);
+      return;
+    }
+
+    if (!(await hasPremiumAccessOrShowPaywall())) return;
+
+    await supabaseApi.deleteShoppingItem(id);
+    shopping = shopping.filter(s => s.id !== id);
+    renderShopping();
+
+    if (window.renderChillProfile) {
+      await window.renderChillProfile();
+    }
+
+    showToast('Товар полностью удалён');
+  };
+
+  const originalClearBought = window.clearBought;
+  window.clearBought = async function () {
+    const session = await supabaseApi.getSession();
+
+    if (!session?.user) {
+      originalClearBought();
+      return;
+    }
+
+    if (!(await hasPremiumAccessOrShowPaywall())) return;
+
+    const boughtCount = shopping.filter(s => s.bought).length;
+
+    if (boughtCount === 0) {
+      showToast('Нет отмеченных купленных товаров');
+      return;
+    }
+
+    await supabaseApi.clearBoughtShoppingItems();
+    await syncShoppingFromCloud();
+    renderShopping();
+
+    if (window.renderChillProfile) {
+      await window.renderChillProfile();
+    }
+
+    showToast(`Удалено купленных товаров: ${boughtCount}`);
   };
 
   document.addEventListener('DOMContentLoaded', async () => {
