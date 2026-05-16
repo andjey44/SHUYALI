@@ -194,6 +194,49 @@
     showToast(`✓ ${name} сохранён в облаке`);
   };
 
+  const originalMarkEaten = window.markEaten;
+  window.markEaten = async function (id) {
+    const session = await supabaseApi.getSession();
+
+    if (!session?.user) {
+      originalMarkEaten(id);
+      return;
+    }
+
+    const product = products.find(x => x.id === id);
+
+    if (!product) return;
+
+    await supabaseApi.markProductEaten(product);
+
+    products = products.filter(x => x.id !== id);
+    eaten.push({
+      id: uid(),
+      name: product.name,
+      category: product.category,
+      price: product.price || CATEGORY_PRICE[product.category] || 100,
+      eatenAt: new Date().toISOString()
+    });
+
+    if (!shopping.find(s => s.name.toLowerCase() === product.name.toLowerCase())) {
+      await supabaseApi.addShoppingItem({
+        name: product.name,
+        category: product.category || 'other',
+        quantity: '1'
+      });
+      await syncShoppingFromCloud();
+    }
+
+    await syncProductsFromCloud();
+    render();
+
+    if (window.renderChillProfile) {
+      await window.renderChillProfile();
+    }
+
+    showToast(`✓ ${product.name} съеден и больше не вернётся в холодильник`);
+  };
+
   const originalAddManualShopping = window.addManualShopping;
   window.addManualShopping = async function () {
     const session = await supabaseApi.getSession();
