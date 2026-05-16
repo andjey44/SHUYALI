@@ -338,7 +338,8 @@
             user_id: user.id,
             name: item.name,
             category: item.category || 'other',
-            quantity: item.quantity || '1'
+            quantity: item.quantity || '1',
+            bought: item.bought || false
           }
         ])
         .select();
@@ -349,6 +350,69 @@
       }
 
       return data;
+    },
+
+    async updateShoppingItemBought(itemId, bought) {
+      const user = await this.getUser();
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await client
+        .from('shopping_items')
+        .update({ bought })
+        .eq('id', itemId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error(error);
+        throw error;
+      }
+
+      return true;
+    },
+
+    async deleteShoppingItem(itemId) {
+      const user = await this.getUser();
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await client
+        .from('shopping_items')
+        .delete()
+        .eq('id', itemId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error(error);
+        throw error;
+      }
+
+      return true;
+    },
+
+    async clearBoughtShoppingItems() {
+      const user = await this.getUser();
+
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await client
+        .from('shopping_items')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('bought', true);
+
+      if (error) {
+        console.error(error);
+        throw error;
+      }
+
+      return true;
     }
   };
 
