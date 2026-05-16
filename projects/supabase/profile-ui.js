@@ -21,8 +21,13 @@
       </div>
 
       <div class="profile-content">
-        <h3 id="profile-name">Пользователь Chill</h3>
-        <p id="profile-email">email@example.com</p>
+        <div class="profile-heading-row">
+          <div>
+            <h3 id="profile-name">Пользователь Chill</h3>
+            <p id="profile-email">email@example.com</p>
+          </div>
+          <span class="profile-plan-badge" id="profile-plan-badge">Trial</span>
+        </div>
 
         <div class="profile-stats">
           <div class="profile-stat">
@@ -36,8 +41,13 @@
           </div>
         </div>
 
+        <p class="profile-subscription-text" id="profile-subscription-text">
+          7 дней бесплатно, затем нужен Pro для работы сайта.
+        </p>
+
         <div class="profile-actions">
-          <button class="btn btn-outline" id="profile-refresh-btn">Обновить профиль</button>
+          <button class="btn btn-primary" id="profile-buy-pro-btn">Купить Pro</button>
+          <button class="btn btn-outline" id="profile-refresh-btn">Обновить</button>
         </div>
       </div>
     `;
@@ -48,6 +58,55 @@
       await renderProfile();
       showToast('Профиль обновлён');
     });
+
+    document.getElementById('profile-buy-pro-btn').addEventListener('click', async () => {
+      if (window.chillPaywall) {
+        window.chillPaywall.showPaywall();
+        return;
+      }
+
+      showToast('Paywall ещё загружается, попробуйте через пару секунд');
+    });
+  }
+
+  async function renderSubscriptionState() {
+    const badge = document.getElementById('profile-plan-badge');
+    const text = document.getElementById('profile-subscription-text');
+    const proBtn = document.getElementById('profile-buy-pro-btn');
+
+    if (!badge || !text || !proBtn) return;
+
+    const subscription = await api.getSubscription();
+
+    if (!subscription) {
+      badge.textContent = 'Free';
+      badge.className = 'profile-plan-badge profile-plan-free';
+      text.textContent = 'Войдите в аккаунт, чтобы получить 7 дней Pro бесплатно.';
+      proBtn.textContent = 'Купить Pro';
+      return;
+    }
+
+    if (subscription.status === 'active') {
+      badge.textContent = 'Pro';
+      badge.className = 'profile-plan-badge profile-plan-pro';
+      text.textContent = 'Pro активен. Все функции сайта доступны.';
+      proBtn.textContent = 'Управлять Pro';
+      return;
+    }
+
+    if (subscription.status === 'trialing') {
+      const daysLeft = api.getTrialDaysLeft(subscription);
+      badge.textContent = 'Trial';
+      badge.className = 'profile-plan-badge profile-plan-trial';
+      text.textContent = `Пробный период: осталось ${daysLeft} дн. После этого нужен Pro.`;
+      proBtn.textContent = 'Купить Pro';
+      return;
+    }
+
+    badge.textContent = 'Expired';
+    badge.className = 'profile-plan-badge profile-plan-expired';
+    text.textContent = 'Пробный период закончился. Для работы сайта нужна подписка Pro.';
+    proBtn.textContent = 'Купить Pro';
   }
 
   async function renderProfile() {
@@ -89,6 +148,8 @@
     } else {
       avatar.textContent = '👤';
     }
+
+    await renderSubscriptionState();
   }
 
   window.renderChillProfile = renderProfile;
