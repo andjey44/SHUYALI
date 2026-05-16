@@ -3,6 +3,10 @@
 (function () {
   if (!window.chillSupabase) return;
 
+  const barcodeScript = document.createElement('script');
+  barcodeScript.src = 'supabase/barcode-scanner.js';
+  document.head.appendChild(barcodeScript);
+
   const api = window.chillSupabase;
 
   function ensureProfileCard() {
