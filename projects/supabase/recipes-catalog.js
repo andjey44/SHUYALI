@@ -1,5 +1,5 @@
 // Chill cloud recipes catalog
-// Loads recipes from Supabase and replaces the old local-only recipe search.
+// Loads recipes from Supabase and shows top-10 recipes for every selected filter.
 
 (function () {
   if (!window.chillSupabase?.client) return;
@@ -41,113 +41,146 @@
 
   function getAvailableRecipes() {
     if (cloudRecipes.length > 0) return cloudRecipes;
-
-    // Fallback to the old hardcoded catalog if Supabase is temporarily unavailable.
     if (typeof RECIPES !== 'undefined') return RECIPES;
-
     return [];
   }
 
   function recipeMatchesDiet(recipe) {
+    const diet = Array.isArray(recipe.diet) ? recipe.diet : [];
+
     if (activeDiet === 'all') return true;
-    if (activeDiet === 'quick') return recipe.time <= 30 || recipe.diet.includes('quick');
-    return recipe.diet.includes(activeDiet);
+    if (activeDiet === 'quick') return recipe.time <= 30 || diet.includes('quick');
+    if (activeDiet === 'vegetarian') return diet.includes('vegetarian');
+    if (activeDiet === 'glutenfree') return diet.includes('glutenfree');
+
+    return true;
   }
 
-  function scoreCloudRecipe(recipe, names, urgentNames) {
-    if (!recipeMatchesDiet(recipe)) return -1;
+  function getProductNames() {
+    return Array.isArray(products) ? products.map(p => String(p.name || '').toLowerCase()) : [];
+  }
 
-    if (names.length === 0) return 1;
+  function getUrgentNames() {
+    return Array.isArray(products)
+      ? products
+          .filter(p => getStatus(p.expiryDate) === 'red')
+          .map(p => String(p.name || '').toLowerCase())
+      : [];
+  }
 
-    const matchCount = recipe.keywords.filter(kw =>
-      names.some(name => name.includes(kw.toLowerCase()))
+  function getRecipeScore(recipe, names, urgentNames) {
+    const keywords = (recipe.keywords || []).map(kw => String(kw).toLowerCase());
+
+    const matchCount = keywords.filter(kw =>
+      names.some(name => name.includes(kw) || kw.includes(name))
     ).length;
 
-    if (matchCount === 0) return -1;
+    const urgencyBonus = keywords.some(kw =>
+      urgentNames.some(name => name.includes(kw) || kw.includes(name))
+    ) ? 20 : 0;
 
-    const likeBonus = recipeLikes[recipe.name] ? 8 : 0;
-    const urgencyBonus = recipe.keywords.some(kw =>
-      urgentNames.some(name => name.includes(kw.toLowerCase()))
-    ) ? 12 : 0;
-    const speedBonus = recipe.time <= 15 ? 2 : recipe.time <= 30 ? 1 : 0;
+    const likeBonus = recipeLikes[recipe.name] ? 10 : 0;
+    const viewBonus = Math.min(recipeViews[recipe.name] || 0, 8);
+    const matchBonus = matchCount * 6;
+    const speedBonus = recipe.time <= 15 ? 4 : recipe.time <= 30 ? 3 : recipe.time <= 45 ? 1 : 0;
 
-    return matchCount * 3 + likeBonus + urgencyBonus + speedBonus;
+    return matchBonus + urgencyBonus + likeBonus + viewBonus + speedBonus;
   }
 
-  window.findRecipes = async function () {
+  function getMissingIngredients(recipe, names) {
+    if (names.length === 0) return recipe.ingredients || [];
+
+    return (recipe.ingredients || []).filter(ingredient => {
+      const ingredientLower = String(ingredient).toLowerCase();
+      const ingredientStem = ingredientLower.slice(0, 5);
+
+      return !names.some(name =>
+        name.includes(ingredientLower) ||
+        ingredientLower.includes(name) ||
+        name.includes(ingredientStem)
+      );
+    });
+  }
+
+  function getTopRecipes(limit = 10) {
+    const recipes = getAvailableRecipes().filter(recipeMatchesDiet);
+    const names = getProductNames();
+    const urgentNames = getUrgentNames();
+
+    return recipes
+      .map(recipe => {
+        const score = getRecipeScore(recipe, names, urgentNames);
+        const missing = getMissingIngredients(recipe, names);
+        const isUrgent = (recipe.keywords || []).some(kw =>
+          urgentNames.some(name => name.includes(String(kw).toLowerCase()))
+        );
+
+        return {
+          ...recipe,
+          score,
+          missing,
+          isUrgent
+        };
+      })
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.time - b.time;
+      })
+      .slice(0, limit);
+  }
+
+  async function renderTopRecipes({ scroll = false, notify = false } = {}) {
     if (cloudRecipes.length === 0) {
       await loadCloudRecipes();
     }
 
-    const recipes = getAvailableRecipes();
+    const recipes = getTopRecipes(10);
 
     if (recipes.length === 0) {
       document.getElementById('recipes-result').innerHTML =
-        '<div class="empty-state">Рецепты пока не загружены. Попробуйте обновить страницу.</div>';
+        '<div class="empty-state">Для этого фильтра пока нет рецептов. Попробуй другой фильтр.</div>';
       return;
     }
 
-    const names = products.map(p => p.name.toLowerCase());
-    const urgentNames = products
-      .filter(p => getStatus(p.expiryDate) === 'red')
-      .map(p => p.name.toLowerCase());
-
-    let matched;
-
-    if (products.length === 0) {
-      matched = recipes
-        .filter(recipeMatchesDiet)
-        .slice(0, 8)
-        .map(recipe => ({ ...recipe, score: 1, missing: recipe.ingredients, isUrgent: false }));
-
-      showToast('Показали общий каталог рецептов. Добавьте продукты, чтобы получить подборку.');
-    } else {
-      matched = recipes
-        .map(recipe => {
-          const score = scoreCloudRecipe(recipe, names, urgentNames);
-          if (score < 0) return null;
-
-          const missing = recipe.ingredients.filter(ingredient => {
-            const ingredientLower = ingredient.toLowerCase();
-            return !names.some(name =>
-              name.includes(ingredientLower) ||
-              recipe.keywords.some(kw => ingredientLower.includes(kw.toLowerCase()) && name.includes(kw.toLowerCase()))
-            );
-          });
-
-          const isUrgent = recipe.keywords.some(kw =>
-            urgentNames.some(name => name.includes(kw.toLowerCase()))
-          );
-
-          return { ...recipe, score, missing, isUrgent };
-        })
-        .filter(Boolean)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 8);
-    }
-
-    matched.forEach(recipe => {
+    recipes.forEach(recipe => {
       recipeViews[recipe.name] = (recipeViews[recipe.name] || 0) + 1;
     });
     save(KEYS.views, recipeViews);
 
-    renderRecipes(matched);
-    document.getElementById('recipes-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    renderRecipes(recipes);
+
+    if (notify) {
+      const filterName = activeDiet === 'all'
+        ? 'всех рецептов'
+        : activeDiet === 'vegetarian'
+          ? 'вегетарианских рецептов'
+          : activeDiet === 'quick'
+            ? 'быстрых рецептов'
+            : 'рецептов без глютена';
+
+      showToast(`Показали топ-10 ${filterName}`);
+    }
+
+    if (scroll) {
+      document.getElementById('recipes-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  window.findRecipes = async function () {
+    await renderTopRecipes({ scroll: true, notify: true });
   };
+
+  function attachDietHandlers() {
+    document.querySelectorAll('.diet-btn').forEach(button => {
+      button.addEventListener('click', async () => {
+        setTimeout(() => renderTopRecipes({ scroll: false, notify: false }), 0);
+      });
+    });
+  }
 
   document.addEventListener('DOMContentLoaded', async () => {
     await loadCloudRecipes();
-
-    const container = document.getElementById('recipes-result');
-    if (container && !container.innerHTML.trim()) {
-      const recipes = getAvailableRecipes().slice(0, 6).map(recipe => ({
-        ...recipe,
-        missing: recipe.ingredients,
-        isUrgent: false,
-        score: 1
-      }));
-
-      renderRecipes(recipes);
-    }
+    attachDietHandlers();
+    await renderTopRecipes({ scroll: false, notify: false });
   });
 })();
