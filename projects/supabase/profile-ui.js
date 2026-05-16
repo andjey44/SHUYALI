@@ -26,7 +26,7 @@
             <h3 id="profile-name">Пользователь Chill</h3>
             <p id="profile-email">email@example.com</p>
           </div>
-          <span class="profile-plan-badge" id="profile-plan-badge">Trial</span>
+          <span class="profile-plan-badge" id="profile-plan-badge">Пробный период</span>
         </div>
 
         <div class="profile-stats">
@@ -42,7 +42,7 @@
         </div>
 
         <p class="profile-subscription-text" id="profile-subscription-text">
-          7 дней бесплатно, затем нужен Pro для работы сайта.
+          7 дней бесплатно, затем нужен Pro.
         </p>
 
         <div class="profile-actions">
@@ -79,7 +79,7 @@
     const subscription = await api.getSubscription();
 
     if (!subscription) {
-      badge.textContent = 'Free';
+      badge.textContent = 'Бесплатно';
       badge.className = 'profile-plan-badge profile-plan-free';
       text.textContent = 'Войдите в аккаунт, чтобы получить 7 дней Pro бесплатно.';
       proBtn.textContent = 'Купить Pro';
@@ -87,25 +87,25 @@
     }
 
     if (subscription.status === 'active') {
-      badge.textContent = 'Pro';
+      badge.textContent = 'Pro активен';
       badge.className = 'profile-plan-badge profile-plan-pro';
-      text.textContent = 'Pro активен. Все функции сайта доступны.';
+      text.textContent = 'Все функции сайта доступны.';
       proBtn.textContent = 'Управлять Pro';
       return;
     }
 
     if (subscription.status === 'trialing') {
       const daysLeft = api.getTrialDaysLeft(subscription);
-      badge.textContent = 'Trial';
+      badge.textContent = 'Пробный период';
       badge.className = 'profile-plan-badge profile-plan-trial';
-      text.textContent = `Пробный период: осталось ${daysLeft} дн. После этого нужен Pro.`;
+      text.textContent = `Осталось ${daysLeft} дн. Затем нужен Pro.`;
       proBtn.textContent = 'Купить Pro';
       return;
     }
 
-    badge.textContent = 'Expired';
+    badge.textContent = 'Период закончился';
     badge.className = 'profile-plan-badge profile-plan-expired';
-    text.textContent = 'Пробный период закончился. Для работы сайта нужна подписка Pro.';
+    text.textContent = 'Для работы сайта нужна подписка Pro.';
     proBtn.textContent = 'Купить Pro';
   }
 
