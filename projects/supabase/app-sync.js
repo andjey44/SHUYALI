@@ -69,6 +69,39 @@
     showToast(fallbackMessage);
   }
 
+  function resetPersonalAnalytics() {
+    eaten = [];
+    wasted = [];
+  }
+
+  async function syncProductEventsFromCloud() {
+    const events = await supabaseApi.getProductEvents();
+
+    eaten = [];
+    wasted = [];
+
+    if (!Array.isArray(events)) return;
+
+    events.forEach(event => {
+      const item = {
+        id: event.id,
+        name: event.product_name,
+        category: event.category || 'other',
+        price: event.price || 0,
+        eatenAt: event.created_at,
+        wastedAt: event.created_at
+      };
+
+      if (event.event_type === 'eaten') {
+        eaten.push(item);
+      }
+
+      if (event.event_type === 'wasted') {
+        wasted.push(item);
+      }
+    });
+  }
+
   async function refreshAuthUI() {
     const session = await supabaseApi.getSession();
 
@@ -84,6 +117,7 @@
 
       await syncProductsFromCloud();
       await syncShoppingFromCloud();
+      await syncProductEventsFromCloud();
 
       render();
 
@@ -99,6 +133,11 @@
       if (authForm) authForm.style.display = 'none';
       if (logoutBtn) logoutBtn.style.display = 'none';
       if (window.refreshAuthModalVisibility) window.refreshAuthModalVisibility(false);
+
+      products = [];
+      shopping = [];
+      resetPersonalAnalytics();
+      render();
 
       const profileCard = document.getElementById('profile-card');
       if (profileCard) {
@@ -187,6 +226,9 @@
 
   window.signOutChill = async function () {
     await supabaseApi.signOut();
+    products = [];
+    shopping = [];
+    resetPersonalAnalytics();
     showToast('Вы вышли из аккаунта');
     await refreshAuthUI();
   };
@@ -196,7 +238,8 @@
     const session = await supabaseApi.getSession();
 
     if (!session?.user) {
-      originalAddProduct();
+      showToast('Войдите в аккаунт, чтобы добавлять продукты и вести аналитику.');
+      if (window.openAuthModal) window.openAuthModal('login');
       return;
     }
 
@@ -221,6 +264,7 @@
     });
 
     await syncProductsFromCloud();
+    await syncProductEventsFromCloud();
     closeModal();
     render();
 
@@ -236,7 +280,8 @@
     const session = await supabaseApi.getSession();
 
     if (!session?.user) {
-      originalMarkEaten(id);
+      showToast('Войдите в аккаунт, чтобы сохранять личную аналитику.');
+      if (window.openAuthModal) window.openAuthModal('login');
       return;
     }
 
@@ -248,15 +293,6 @@
 
     await supabaseApi.markProductEaten(product);
 
-    products = products.filter(x => x.id !== id);
-    eaten.push({
-      id: uid(),
-      name: product.name,
-      category: product.category,
-      price: product.price || CATEGORY_PRICE[product.category] || 100,
-      eatenAt: new Date().toISOString()
-    });
-
     if (!shopping.find(s => s.name.toLowerCase() === product.name.toLowerCase())) {
       await supabaseApi.addShoppingItem({
         name: product.name,
@@ -267,6 +303,7 @@
     }
 
     await syncProductsFromCloud();
+    await syncProductEventsFromCloud();
     render();
 
     if (window.renderChillProfile) {
@@ -281,7 +318,8 @@
     const session = await supabaseApi.getSession();
 
     if (!session?.user) {
-      originalAddManualShopping();
+      showToast('Войдите в аккаунт, чтобы вести личный список покупок.');
+      if (window.openAuthModal) window.openAuthModal('login');
       return;
     }
 
@@ -321,7 +359,8 @@
     const session = await supabaseApi.getSession();
 
     if (!session?.user) {
-      originalToggleBought(id);
+      showToast('Войдите в аккаунт, чтобы менять список покупок.');
+      if (window.openAuthModal) window.openAuthModal('login');
       return;
     }
 
@@ -333,7 +372,7 @@
     const nextBought = !item.bought;
 
     await supabaseApi.updateShoppingItemBought(id, nextBought);
-    shopping = shopping.map(s => s.id === id ? { ...s, bought: nextBought } : s);
+    await syncShoppingFromCloud();
     renderShopping();
   };
 
@@ -342,14 +381,15 @@
     const session = await supabaseApi.getSession();
 
     if (!session?.user) {
-      originalRemoveShoppingItem(id);
+      showToast('Войдите в аккаунт, чтобы удалять покупки.');
+      if (window.openAuthModal) window.openAuthModal('login');
       return;
     }
 
     if (!(await hasPremiumAccessOrShowPaywall())) return;
 
     await supabaseApi.deleteShoppingItem(id);
-    shopping = shopping.filter(s => s.id !== id);
+    await syncShoppingFromCloud();
     renderShopping();
 
     if (window.renderChillProfile) {
@@ -364,7 +404,8 @@
     const session = await supabaseApi.getSession();
 
     if (!session?.user) {
-      originalClearBought();
+      showToast('Войдите в аккаунт, чтобы очищать список покупок.');
+      if (window.openAuthModal) window.openAuthModal('login');
       return;
     }
 
@@ -389,6 +430,10 @@
   };
 
   document.addEventListener('DOMContentLoaded', async () => {
+    products = [];
+    shopping = [];
+    resetPersonalAnalytics();
+    render();
     setTimeout(refreshAuthUI, 300);
   });
 })();
