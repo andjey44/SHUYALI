@@ -128,13 +128,13 @@
         box-shadow: 0 4px 16px rgba(0,0,0,.08);
       }
 
-      .auth-form {
-        display: flex;
+      .auth-modal-box .auth-form {
+        display: flex !important;
         flex-direction: column;
         gap: .85rem;
       }
 
-      .auth-form .input {
+      .auth-modal-box .auth-form .input {
         width: 100%;
         min-height: 50px;
         padding: .8rem 1rem;
@@ -259,6 +259,9 @@
       slot.appendChild(oldForm);
     }
 
+    oldForm.style.display = 'flex';
+    oldForm.style.flexDirection = 'column';
+
     const oldLoginButton = oldForm.querySelector('button[onclick="signInChill()"]');
     const oldRegisterButton = oldForm.querySelector('button[onclick="signUpChill()"]');
 
@@ -301,8 +304,14 @@
     const loginBtn = document.getElementById('auth-login-submit');
     const registerBtn = document.getElementById('auth-register-submit');
     const forgotBtn = document.getElementById('auth-forgot-btn');
+    const form = document.getElementById('auth-form');
 
     if (!title || !subtitle || !footer) return;
+
+    if (form) {
+      form.style.display = 'flex';
+      form.style.flexDirection = 'column';
+    }
 
     const isRegister = mode === 'register';
 
@@ -341,9 +350,11 @@
 
     const openers = document.getElementById('auth-openers');
     const logoutBtn = document.getElementById('auth-logout');
+    const form = document.getElementById('auth-form');
 
     if (openers) openers.style.display = isLoggedIn ? 'none' : 'flex';
     if (logoutBtn) logoutBtn.style.display = isLoggedIn ? 'inline-flex' : 'none';
+    if (form) form.style.display = isLoggedIn ? 'none' : 'flex';
 
     if (isLoggedIn) closeAuthModal();
   };
