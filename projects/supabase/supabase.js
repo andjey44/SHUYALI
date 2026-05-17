@@ -291,6 +291,25 @@
       return true;
     },
 
+    async getProductEvents() {
+      const user = await this.getUser();
+
+      if (!user) return [];
+
+      const { data, error } = await client
+        .from('product_events')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error(error);
+        return [];
+      }
+
+      return data || [];
+    },
+
     async deleteProduct(productId) {
       const user = await this.getUser();
 
