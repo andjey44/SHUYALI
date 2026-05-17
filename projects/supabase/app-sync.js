@@ -78,8 +78,9 @@
 
     if (session?.user) {
       authStatus.textContent = `Вы вошли как ${session.user.email}. Данные синхронизируются через Supabase ☁️`;
-      authForm.style.display = 'none';
-      logoutBtn.style.display = 'inline-flex';
+      if (authForm) authForm.style.display = 'none';
+      if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+      if (window.refreshAuthModalVisibility) window.refreshAuthModalVisibility(true);
 
       await syncProductsFromCloud();
       await syncShoppingFromCloud();
@@ -95,8 +96,9 @@
       }
     } else {
       authStatus.textContent = 'Гостевой режим: данные хранятся только в этом браузере.';
-      authForm.style.display = 'flex';
-      logoutBtn.style.display = 'none';
+      if (authForm) authForm.style.display = 'none';
+      if (logoutBtn) logoutBtn.style.display = 'none';
+      if (window.refreshAuthModalVisibility) window.refreshAuthModalVisibility(false);
 
       const profileCard = document.getElementById('profile-card');
       if (profileCard) {
@@ -158,6 +160,7 @@
       showToast('Регистрация успешна! Теперь войдите в аккаунт.');
     }
 
+    if (window.closeAuthModal) window.closeAuthModal();
     await refreshAuthUI();
   };
 
@@ -178,6 +181,7 @@
     }
 
     showToast('Вход выполнен 🚀');
+    if (window.closeAuthModal) window.closeAuthModal();
     await refreshAuthUI();
   };
 
@@ -385,6 +389,6 @@
   };
 
   document.addEventListener('DOMContentLoaded', async () => {
-    await refreshAuthUI();
+    setTimeout(refreshAuthUI, 300);
   });
 })();
