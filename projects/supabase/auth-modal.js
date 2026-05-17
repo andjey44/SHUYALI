@@ -1,5 +1,5 @@
 // Chill auth modal UI
-// Turns the compact header auth form into a separate login/register modal.
+// Separate reliable login/register modal with its own visible inputs.
 
 (function () {
   function ensureAuthModalStyles() {
@@ -8,203 +8,30 @@
     const style = document.createElement('style');
     style.id = 'auth-modal-styles';
     style.textContent = `
-      .auth-section {
-        top: 10px;
-        right: 1.5rem;
-      }
-
-      .auth-card {
-        gap: .55rem;
-      }
-
-      .auth-modal-openers {
-        display: flex;
-        align-items: center;
-        gap: .55rem;
-      }
-
-      .auth-modal-openers .btn,
-      #auth-logout {
-        min-height: 38px;
-        padding: .45rem .95rem;
-        font-size: .84rem;
-        border-radius: 999px;
-      }
-
-      body.auth-modal-active {
-        overflow: hidden;
-      }
-
-      .auth-modal-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 850;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 1.25rem;
-        background:
-          radial-gradient(circle at top left, rgba(76, 175, 80, .24), transparent 34%),
-          linear-gradient(135deg, rgba(61, 150, 255, .82), rgba(159, 42, 220, .82));
-        backdrop-filter: blur(6px);
-      }
-
-      .auth-modal-overlay.open {
-        display: flex;
-        animation: fadeIn .16s ease;
-      }
-
-      .auth-modal-box {
-        position: relative;
-        width: min(100%, 420px);
-        padding: 2rem;
-        border-radius: 18px;
-        background: #fff;
-        box-shadow: 0 22px 70px rgba(0, 0, 0, .22);
-        animation: slideUpModal .22s ease;
-      }
-
-      .auth-modal-close {
-        position: absolute;
-        top: .9rem;
-        right: .9rem;
-        width: 34px;
-        height: 34px;
-        border: none;
-        border-radius: 50%;
-        background: var(--bg-alt, #F2F5F0);
-        color: var(--text-muted, #6b7a67);
-        font-size: 1.25rem;
-        font-weight: 800;
-        cursor: pointer;
-        transition: all .18s ease;
-      }
-
-      .auth-modal-close:hover {
-        background: var(--red-light, #ffebee);
-        color: var(--red, #F44336);
-      }
-
-      .auth-modal-title {
-        margin-bottom: .35rem;
-        text-align: center;
-        font-size: 1.75rem;
-        font-weight: 900;
-        color: var(--text, #1a2217);
-      }
-
-      .auth-modal-subtitle {
-        margin-bottom: 1.4rem;
-        text-align: center;
-        color: var(--text-muted, #6b7a67);
-        font-size: .95rem;
-      }
-
-      .auth-modal-tabs {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: .55rem;
-        margin-bottom: 1.3rem;
-        padding: .3rem;
-        border-radius: 999px;
-        background: var(--bg-alt, #F2F5F0);
-      }
-
-      .auth-modal-tab {
-        border: none;
-        border-radius: 999px;
-        padding: .65rem .9rem;
-        background: transparent;
-        color: var(--text-muted, #6b7a67);
-        font-family: inherit;
-        font-weight: 800;
-        cursor: pointer;
-        transition: all .18s ease;
-      }
-
-      .auth-modal-tab.active {
-        background: #fff;
-        color: var(--green, #4CAF50);
-        box-shadow: 0 4px 16px rgba(0,0,0,.08);
-      }
-
-      .auth-modal-box .auth-form {
-        display: flex !important;
-        flex-direction: column;
-        gap: .85rem;
-      }
-
-      .auth-modal-box .auth-form .input {
-        width: 100%;
-        min-height: 50px;
-        padding: .8rem 1rem;
-        font-size: .96rem;
-        background: #fff;
-      }
-
-      .auth-modal-submit {
-        width: 100%;
-        min-height: 50px;
-        margin-top: .35rem;
-        border-radius: 12px;
-        background: linear-gradient(90deg, #25b7d3, #4CAF50, #a728d8);
-        border: none;
-        color: #fff;
-        font-size: 1rem;
-        font-weight: 900;
-      }
-
-      .auth-modal-footer {
-        margin-top: 1.1rem;
-        text-align: center;
-        color: var(--text-muted, #6b7a67);
-        font-size: .9rem;
-      }
-
-      .auth-modal-link {
-        border: none;
-        background: none;
-        color: var(--green, #4CAF50);
-        font-family: inherit;
-        font-weight: 800;
-        cursor: pointer;
-      }
-
-      .auth-modal-forgot {
-        align-self: flex-start;
-        border: none;
-        background: none;
-        color: #2f9ad6;
-        font-family: inherit;
-        font-size: .92rem;
-        cursor: pointer;
-      }
-
-      .auth-card > div:first-child,
-      .auth-title,
-      .auth-status {
-        display: none !important;
-      }
-
-      @media(max-width:900px) {
-        .auth-section {
-          position: sticky;
-          top: 0;
-          right: auto;
-          z-index: 240;
-          padding: .65rem 1rem;
-          border-bottom: 1px solid var(--border);
-          background: var(--bg);
-        }
-
-        .auth-card {
-          justify-content: center;
-        }
-
-        .auth-modal-openers {
-          justify-content: center;
-        }
-      }
+      .auth-section { top: 10px; right: 1.5rem; }
+      .auth-card { gap: .55rem; }
+      #auth-form, .auth-card > div:first-child, .auth-title, .auth-status { display: none !important; }
+      .auth-modal-openers { display: flex; align-items: center; gap: .55rem; }
+      .auth-modal-openers .btn, #auth-logout { min-height: 38px; padding: .45rem .95rem; font-size: .84rem; border-radius: 999px; }
+      body.auth-modal-active { overflow: hidden; }
+      .auth-modal-overlay { position: fixed; inset: 0; z-index: 850; display: none; align-items: center; justify-content: center; padding: 1.25rem; background: radial-gradient(circle at top left, rgba(76,175,80,.24), transparent 34%), linear-gradient(135deg, rgba(61,150,255,.82), rgba(159,42,220,.82)); backdrop-filter: blur(6px); }
+      .auth-modal-overlay.open { display: flex; }
+      .auth-modal-box { position: relative; width: min(100%, 420px); padding: 2rem; border-radius: 18px; background: #fff; box-shadow: 0 22px 70px rgba(0,0,0,.22); }
+      .auth-modal-close { position: absolute; top: .9rem; right: .9rem; width: 34px; height: 34px; border: none; border-radius: 50%; background: var(--bg-alt,#F2F5F0); color: var(--text-muted,#6b7a67); font-size: 1.25rem; font-weight: 800; cursor: pointer; }
+      .auth-modal-close:hover { background: var(--red-light,#ffebee); color: var(--red,#F44336); }
+      .auth-modal-title { margin-bottom: .35rem; text-align: center; font-size: 1.75rem; font-weight: 900; color: var(--text,#1a2217); }
+      .auth-modal-subtitle { margin-bottom: 1.4rem; text-align: center; color: var(--text-muted,#6b7a67); font-size: .95rem; }
+      .auth-modal-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; margin-bottom: 1.3rem; padding: .3rem; border-radius: 999px; background: var(--bg-alt,#F2F5F0); }
+      .auth-modal-tab { border: none; border-radius: 999px; padding: .65rem .9rem; background: transparent; color: var(--text-muted,#6b7a67); font-family: inherit; font-weight: 800; cursor: pointer; }
+      .auth-modal-tab.active { background: #fff; color: var(--green,#4CAF50); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+      .auth-modal-form { display: flex; flex-direction: column; gap: .85rem; }
+      .auth-modal-form label { font-weight: 800; color: var(--text,#1a2217); font-size: .9rem; }
+      .auth-modal-form .input { width: 100%; min-height: 50px; padding: .8rem 1rem; font-size: .96rem; background: #fff; }
+      .auth-modal-submit { width: 100%; min-height: 50px; margin-top: .35rem; border-radius: 12px; background: linear-gradient(90deg,#25b7d3,#4CAF50,#a728d8); border: none; color: #fff; font-size: 1rem; font-weight: 900; cursor: pointer; justify-content: center; }
+      .auth-modal-footer { margin-top: 1.1rem; text-align: center; color: var(--text-muted,#6b7a67); font-size: .9rem; }
+      .auth-modal-link, .auth-modal-forgot { border: none; background: none; color: var(--green,#4CAF50); font-family: inherit; font-weight: 800; cursor: pointer; }
+      .auth-modal-forgot { align-self: flex-start; color: #2f9ad6; font-size: .92rem; font-weight: 600; }
+      @media(max-width:900px) { .auth-section { position: sticky; top: 0; right: auto; z-index: 240; padding: .65rem 1rem; border-bottom: 1px solid var(--border); background: var(--bg); } .auth-card, .auth-modal-openers { justify-content: center; } }
     `;
 
     document.head.appendChild(style);
@@ -243,47 +70,21 @@
             <button class="auth-modal-tab active" id="auth-login-tab" type="button" onclick="setAuthMode('login')">Вход</button>
             <button class="auth-modal-tab" id="auth-register-tab" type="button" onclick="setAuthMode('register')">Регистрация</button>
           </div>
-          <div id="auth-modal-form-slot"></div>
+          <form class="auth-modal-form" id="auth-modal-form" onsubmit="submitAuthModal(event)">
+            <label for="auth-modal-email">Email</label>
+            <input id="auth-modal-email" class="input" type="email" placeholder="Введите email" autocomplete="email" required />
+            <label for="auth-modal-password">Пароль</label>
+            <input id="auth-modal-password" class="input" type="password" placeholder="Введите пароль" autocomplete="current-password" required />
+            <button class="auth-modal-forgot" id="auth-forgot-btn" type="button" onclick="showToast('Восстановление пароля можно подключить следующим шагом.')">Забыли пароль?</button>
+            <button class="btn auth-modal-submit" id="auth-modal-submit-btn" type="submit">Войти</button>
+          </form>
           <p class="auth-modal-footer" id="auth-modal-footer"></p>
         </div>
       `;
       document.body.appendChild(modal);
-
       modal.addEventListener('click', event => {
         if (event.target.id === 'auth-modal') closeAuthModal();
       });
-    }
-
-    const slot = document.getElementById('auth-modal-form-slot');
-    if (oldForm.parentElement !== slot) {
-      slot.appendChild(oldForm);
-    }
-
-    oldForm.style.display = 'flex';
-    oldForm.style.flexDirection = 'column';
-
-    const oldLoginButton = oldForm.querySelector('button[onclick="signInChill()"]');
-    const oldRegisterButton = oldForm.querySelector('button[onclick="signUpChill()"]');
-
-    if (oldLoginButton) {
-      oldLoginButton.id = 'auth-login-submit';
-      oldLoginButton.classList.add('auth-modal-submit');
-    }
-
-    if (oldRegisterButton) {
-      oldRegisterButton.id = 'auth-register-submit';
-      oldRegisterButton.classList.add('auth-modal-submit');
-    }
-
-    if (!document.getElementById('auth-forgot-btn')) {
-      const forgot = document.createElement('button');
-      forgot.id = 'auth-forgot-btn';
-      forgot.type = 'button';
-      forgot.className = 'auth-modal-forgot';
-      forgot.textContent = 'Забыли пароль?';
-      forgot.addEventListener('click', () => showToast('Восстановление пароля можно подключить следующим шагом.'));
-      const password = document.getElementById('auth-password');
-      if (password) password.insertAdjacentElement('afterend', forgot);
     }
 
     if (logoutBtn && logoutBtn.parentElement !== authCard) {
@@ -296,40 +97,49 @@
   window.setAuthMode = function (mode) {
     window.currentAuthMode = mode;
 
+    const isRegister = mode === 'register';
     const title = document.getElementById('auth-modal-title');
     const subtitle = document.getElementById('auth-modal-subtitle');
     const footer = document.getElementById('auth-modal-footer');
-    const loginTab = document.getElementById('auth-login-tab');
-    const registerTab = document.getElementById('auth-register-tab');
-    const loginBtn = document.getElementById('auth-login-submit');
-    const registerBtn = document.getElementById('auth-register-submit');
+    const submitBtn = document.getElementById('auth-modal-submit-btn');
     const forgotBtn = document.getElementById('auth-forgot-btn');
-    const form = document.getElementById('auth-form');
 
-    if (!title || !subtitle || !footer) return;
-
-    if (form) {
-      form.style.display = 'flex';
-      form.style.flexDirection = 'column';
-    }
-
-    const isRegister = mode === 'register';
-
-    title.textContent = isRegister ? 'Регистрация в Chill' : 'Вход в Chill';
-    subtitle.textContent = isRegister
-      ? 'Создайте аккаунт и получите 7 дней Pro бесплатно.'
-      : 'Войдите, чтобы синхронизировать продукты и покупки.';
-
-    loginTab?.classList.toggle('active', !isRegister);
-    registerTab?.classList.toggle('active', isRegister);
-
-    if (loginBtn) loginBtn.style.display = isRegister ? 'none' : 'inline-flex';
-    if (registerBtn) registerBtn.style.display = isRegister ? 'inline-flex' : 'none';
+    if (title) title.textContent = isRegister ? 'Регистрация в Chill' : 'Вход в Chill';
+    if (subtitle) subtitle.textContent = isRegister ? 'Создайте аккаунт и получите 7 дней Pro бесплатно.' : 'Войдите, чтобы синхронизировать продукты и покупки.';
+    if (submitBtn) submitBtn.textContent = isRegister ? 'Зарегистрироваться' : 'Войти';
     if (forgotBtn) forgotBtn.style.display = isRegister ? 'none' : 'inline-flex';
 
-    footer.innerHTML = isRegister
-      ? 'Уже есть аккаунт? <button class="auth-modal-link" type="button" onclick="setAuthMode(\'login\')">Войти</button>'
-      : 'Нет аккаунта? <button class="auth-modal-link" type="button" onclick="setAuthMode(\'register\')">Зарегистрироваться</button>';
+    document.getElementById('auth-login-tab')?.classList.toggle('active', !isRegister);
+    document.getElementById('auth-register-tab')?.classList.toggle('active', isRegister);
+
+    if (footer) {
+      footer.innerHTML = isRegister
+        ? 'Уже есть аккаунт? <button class="auth-modal-link" type="button" onclick="setAuthMode(\'login\')">Войти</button>'
+        : 'Нет аккаунта? <button class="auth-modal-link" type="button" onclick="setAuthMode(\'register\')">Зарегистрироваться</button>';
+    }
+  };
+
+  window.submitAuthModal = async function (event) {
+    event.preventDefault();
+
+    const email = document.getElementById('auth-modal-email')?.value.trim();
+    const password = document.getElementById('auth-modal-password')?.value.trim();
+    const oldEmail = document.getElementById('auth-email');
+    const oldPassword = document.getElementById('auth-password');
+
+    if (!email || !password) {
+      showToast('Введите email и пароль');
+      return;
+    }
+
+    if (oldEmail) oldEmail.value = email;
+    if (oldPassword) oldPassword.value = password;
+
+    if (window.currentAuthMode === 'register') {
+      await window.signUpChill?.();
+    } else {
+      await window.signInChill?.();
+    }
   };
 
   window.openAuthModal = function (mode = 'login') {
@@ -337,7 +147,7 @@
     setAuthMode(mode);
     document.getElementById('auth-modal')?.classList.add('open');
     document.body.classList.add('auth-modal-active');
-    setTimeout(() => document.getElementById('auth-email')?.focus(), 50);
+    setTimeout(() => document.getElementById('auth-modal-email')?.focus(), 50);
   };
 
   window.closeAuthModal = function () {
@@ -350,11 +160,9 @@
 
     const openers = document.getElementById('auth-openers');
     const logoutBtn = document.getElementById('auth-logout');
-    const form = document.getElementById('auth-form');
 
     if (openers) openers.style.display = isLoggedIn ? 'none' : 'flex';
     if (logoutBtn) logoutBtn.style.display = isLoggedIn ? 'inline-flex' : 'none';
-    if (form) form.style.display = isLoggedIn ? 'none' : 'flex';
 
     if (isLoggedIn) closeAuthModal();
   };
