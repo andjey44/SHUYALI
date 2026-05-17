@@ -280,14 +280,14 @@
       forgot.textContent = 'Забыли пароль?';
       forgot.addEventListener('click', () => showToast('Восстановление пароля можно подключить следующим шагом.'));
       const password = document.getElementById('auth-password');
-      password.insertAdjacentElement('afterend', forgot);
+      if (password) password.insertAdjacentElement('afterend', forgot);
     }
 
     if (logoutBtn && logoutBtn.parentElement !== authCard) {
       authCard.appendChild(logoutBtn);
     }
 
-    setAuthMode('login');
+    setAuthMode(window.currentAuthMode || 'login');
   }
 
   window.setAuthMode = function (mode) {
@@ -337,6 +337,8 @@
   };
 
   window.refreshAuthModalVisibility = function (isLoggedIn) {
+    ensureAuthModal();
+
     const openers = document.getElementById('auth-openers');
     const logoutBtn = document.getElementById('auth-logout');
 
@@ -346,5 +348,19 @@
     if (isLoggedIn) closeAuthModal();
   };
 
-  document.addEventListener('DOMContentLoaded', ensureAuthModal);
+  function initAuthModal() {
+    ensureAuthModal();
+
+    window.chillSupabase?.getSession?.().then(session => {
+      window.refreshAuthModalVisibility(Boolean(session?.user));
+    }).catch(() => {
+      window.refreshAuthModalVisibility(false);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAuthModal);
+  } else {
+    initAuthModal();
+  }
 })();
