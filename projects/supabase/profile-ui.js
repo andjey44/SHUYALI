@@ -3,6 +3,10 @@
 (function () {
   if (!window.chillSupabase) return;
 
+  const authModalScript = document.createElement('script');
+  authModalScript.src = 'supabase/auth-modal.js';
+  document.head.appendChild(authModalScript);
+
   const barcodeScript = document.createElement('script');
   barcodeScript.src = 'supabase/barcode-scanner.js';
   document.head.appendChild(barcodeScript);
